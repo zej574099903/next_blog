@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <path fill="#FF6B6B" d="M224 128a8 8 0 0 1-8 8h-8v64a8 8 0 0 1-8 8H56a8 8 0 0 1-8-8v-64h-8a8 8 0 0 1 0-16h8V56a8 8 0 0 1 8-8h144a8 8 0 0 1 8 8v64h8a8 8 0 0 1 8 8ZM64 64v128h128V64Z"/>
+  <path fill="#FF6B6B" d="m165.657 98.343-32 32a8 8 0 0 1-11.314 0l-32-32a8 8 0 0 1 11.314-11.314L128 113.372l26.343-26.343a8 8 0 0 1 11.314 11.314Z"/>
+</svg>
