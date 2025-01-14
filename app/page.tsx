@@ -1,8 +1,19 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 import { categories, posts } from '@/data/posts';
+import Toast from './components/Toast';
 
 export default function Home() {
+  const [showToast, setShowToast] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowToast(true);
+  };
+
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
@@ -68,54 +79,69 @@ export default function Home() {
       </section>
 
       {/* Latest Posts Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+      <section className="py-20 px-4 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-900">
             最新文章
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
             分享最新的技术见解和实践经验，助你走在技术前沿
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {posts.map((post) => (
+          <div className="space-y-6">
+            {posts.slice(0, 3).map((post) => (
               <Link
                 key={post.id}
                 href={`/post/${post.slug}`}
-                className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
+                className="block group"
               >
-                <div className="relative h-60 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
-                  <Image
-                    src={post.coverImage}
-                    alt={post.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <span className="inline-block px-3 py-1 bg-blue-600 text-white text-sm rounded-full mb-2">
+                <article className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-6">
+                  <div className="mb-4">
+                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded-full mb-2">
                       {categories.find(c => c.id === post.category)?.name}
                     </span>
-                    <h3 className="text-xl font-semibold text-white">
+                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                       {post.title}
                     </h3>
                   </div>
-                </div>
-                <div className="p-6 flex-1 flex flex-col">
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 flex-1">
+                  <p className="text-gray-600 mb-4">
                     {post.description}
                   </p>
-                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center space-x-4">
+                      <span className="flex items-center">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        {post.date}
+                      </span>
+                      <span className="flex items-center">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {post.readingTime} 分钟阅读
+                      </span>
+                    </div>
+                    <div className="flex items-center text-blue-600">
+                      <span className="mr-2">阅读全文</span>
+                      <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                      {post.readingTime} 分钟阅读
-                    </span>
-                    <span>{post.date}</span>
+                    </div>
                   </div>
-                </div>
+                </article>
               </Link>
             ))}
+          </div>
+          <div className="text-center mt-8">
+            <Link
+              href="/posts"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+            >
+              查看更多文章
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </div>
       </section>
@@ -127,7 +153,7 @@ export default function Home() {
           <p className="text-xl text-gray-200 mb-8">
             获取最新的技术文章和教程更新提醒
           </p>
-          <form className="flex gap-4 max-w-md mx-auto">
+          <form onSubmit={handleSubscribe} className="flex gap-4 max-w-md mx-auto">
             <input
               type="email"
               placeholder="输入你的邮箱"
@@ -142,6 +168,14 @@ export default function Home() {
           </form>
         </div>
       </section>
+
+      {showToast && (
+        <Toast
+          message="订阅功能正在开发中，敬请期待！"
+          type="info"
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </main>
   );
 }

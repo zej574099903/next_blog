@@ -2,6 +2,9 @@ import { posts } from '@/data/posts'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { marked } from 'marked'
+import { ShareButton } from '@/app/components/ShareButton'
+import { ScrollToTopButton } from '@/app/components/ScrollToTopButton'
 
 export async function generateStaticParams() {
   return posts.map((post) => ({
@@ -15,6 +18,9 @@ export default function PostPage({ params }: { params: { slug: string } }) {
   if (!post) {
     notFound()
   }
+
+  // Convert Markdown to HTML
+  const htmlContent = marked(post.content)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -71,8 +77,8 @@ export default function PostPage({ params }: { params: { slug: string } }) {
 
         {/* 文章内容 */}
         <div className="card p-8 mb-12">
-          <div className="prose-custom">
-            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+          <div className="prose prose-lg dark:prose-invert max-w-none">
+            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </div>
         </div>
 
@@ -89,29 +95,8 @@ export default function PostPage({ params }: { params: { slug: string } }) {
               返回首页
             </Link>
             <div className="flex gap-4">
-              <button className="btn-secondary flex items-center" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
-                返回顶部
-              </button>
-              <button 
-                className="btn-primary flex items-center"
-                onClick={() => {
-                  navigator.share({
-                    title: post.title,
-                    text: post.description,
-                    url: window.location.href,
-                  }).catch(() => {
-                    navigator.clipboard.writeText(window.location.href)
-                  })
-                }}
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                分享
-              </button>
+              <ScrollToTopButton />
+              <ShareButton title={post.title} description={post.description} />
             </div>
           </div>
         </footer>

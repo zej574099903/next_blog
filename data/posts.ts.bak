@@ -1,0 +1,715 @@
+import { Post, Category, Tag } from '../types';
+
+export const categories: Category[] = [
+  {
+    id: 'javascript',
+    name: 'JavaScript深入系列',
+    description: '探索JavaScript核心概念和高级特性',
+    slug: 'javascript',
+    coverImage: '/images/categories/javascript.svg'
+  },
+  {
+    id: 'vue',
+    name: 'Vue.js最佳实践',
+    description: '深入Vue.js框架的各个方面',
+    slug: 'vue',
+    coverImage: '/images/categories/vue.svg'
+  }
+];
+
+export const tags: Tag[] = [
+  {
+    id: 'javascript',
+    name: 'JavaScript',
+    description: 'JavaScript编程语言',
+    slug: 'javascript'
+  },
+  {
+    id: 'vue',
+    name: 'Vue.js',
+    description: 'Vue.js前端框架',
+    slug: 'vue'
+  },
+  {
+    id: 'typescript',
+    name: 'TypeScript',
+    description: 'TypeScript类型系统',
+    slug: 'typescript'
+  }
+];
+
+export const posts: Post[] = [
+  // ... Previous posts ...
+  {
+    id: 'vue3-dynamic-menu-permission',
+    title: 'Vue 3 项目实战：动态菜单与权限控制系统的设计与实现',
+    description: '详细介绍如何在 Vue 3 项目中实现动态菜单和权限控制系统，包括路由守卫、权限指令、状态管理等核心内容。',
+    date: '2025-01-14',
+    category: 'vue',
+    author: 'CodeGeek',
+    tags: ['Vue3', '权限控制', '动态路由', '最佳实践'],
+    content: `
+# Vue 3 项目实战：动态菜单与权限控制系统的设计与实现
+
+在企业级应用中，动态菜单和权限控制是非常重要的功能。本文将详细介绍如何在 Vue 3 项目中实现一个完整的动态菜单和权限控制系统。
+
+## 1. 系统设计
+
+### 1.1 整体架构
+
+\`\`\`typescript
+// types/menu.ts
+interface MenuItem {
+  id: string
+  name: string
+  path: string
+  icon?: string
+  children?: MenuItem[]
+  permissions?: string[]
+  component?: string | (() => Promise<any>)
+}
+
+// types/permission.ts
+interface Permission {
+  code: string
+  name: string
+  description?: string
+}
+
+interface UserPermissions {
+  roles: string[]
+  permissions: string[]
+}
+\`\`\`
+
+### 1.2 状态管理
+
+使用 Pinia 管理权限状态：
+
+\`\`\`typescript
+// stores/permission.ts
+import { defineStore } from 'pinia'
+import type { MenuItem, UserPermissions } from '@/types'
+import { fetchUserPermissions } from '@/api/user'
+
+export const usePermissionStore = defineStore('permission', {
+  state: () => ({
+    menus: [] as MenuItem[],
+    permissions: [] as string[],
+    roles: [] as string[],
+    routes: [] as RouteRecordRaw[]
+  }),
+  
+  getters: {
+    hasPermission: (state) => (permission: string) => 
+      state.permissions.includes(permission),
+      
+    hasRole: (state) => (role: string) => 
+      state.roles.includes(role)
+  },
+  
+  actions: {
+    async initPermissions() {
+      try {
+        const userPermissions = await fetchUserPermissions()
+        this.setPermissions(userPermissions)
+        await this.generateRoutes()
+      } catch (error) {
+        console.error('Failed to initialize permissions:', error)
+        throw error
+      }
+    },
+    
+    setPermissions(permissions: UserPermissions) {
+      this.permissions = permissions.permissions
+      this.roles = permissions.roles
+    },
+    
+    async generateRoutes() {
+      // 根据权限生成路由
+      const accessedRoutes = await filterAsyncRoutes(asyncRoutes, this.permissions)
+      this.routes = accessedRoutes
+      this.menus = generateMenus(accessedRoutes)
+      return accessedRoutes
+    }
+  }
+})
+\`\`\`
+
+## 2. 动态路由实现
+
+### 2.1 路由配置
+
+\`\`\`typescript
+// router/index.ts
+import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
+
+// 基础路由，所有用户都可以访问
+export const constantRoutes: RouteRecordRaw[] = [
+  {
+    path: '/login',
+    component: () => import('@/views/login/index.vue'),
+    meta: { title: '登录' }
+  },
+  {
+    path: '/404',
+    component: () => import('@/views/error/404.vue'),
+    meta: { title: '404' }
+  }
+]
+
+// 需要根据权限动态加载的路由
+export const asyncRoutes: RouteRecordRaw[] = [
+  {
+    path: '/system',
+    component: Layout,
+    meta: { title: '系统管理', icon: 'system', roles: ['admin'] },
+    children: [
+      {
+        path: 'user',
+        component: () => import('@/views/system/user/index.vue'),
+        meta: { 
+          title: '用户管理',
+          permissions: ['system:user:list']
+        }
+      },
+      {
+        path: 'role',
+        component: () => import('@/views/system/role/index.vue'),
+        meta: {
+          title: '角色管理',
+          permissions: ['system:role:list']
+        }
+      }
+    ]
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: constantRoutes
+})
+
+export default router
+\`\`\`
+
+### 2.2 路由守卫
+
+\`\`\`typescript
+// router/permission.ts
+import router from './index'
+import { usePermissionStore } from '@/stores/permission'
+import { useUserStore } from '@/stores/user'
+
+router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore()
+  const permissionStore = usePermissionStore()
+  
+  // 获取 token
+  const hasToken = userStore.token
+  
+  if (hasToken) {
+    if (to.path === '/login') {
+      next({ path: '/' })
+    } else {
+      // 检查用户是否已获取权限信息
+      const hasPermissions = permissionStore.permissions.length > 0
+      
+      if (hasPermissions) {
+        next()
+      } else {
+        try {
+          // 获取用户权限信息
+          await permissionStore.initPermissions()
+          
+          // 动态添加路由
+          permissionStore.routes.forEach(route => {
+            router.addRoute(route)
+          })
+          
+          // 确保路由已添加完成
+          next({ ...to, replace: true })
+        } catch (error) {
+          // 处理错误，重置 token 并跳转到登录页
+          await userStore.resetToken()
+          next('/login?redirect=' + to.path)
+        }
+      }
+    }
+  } else {
+    if (whiteList.includes(to.path)) {
+      next()
+    } else {
+      next('/login?redirect=' + to.path)
+    }
+  }
+})
+\`\`\`
+
+## 3. 菜单组件实现
+
+### 3.1 菜单组件
+
+\`\`\`vue
+<!-- components/Menu/index.vue -->
+<template>
+  <el-menu
+    :collapse="isCollapse"
+    :default-active="activeMenu"
+    :unique-opened="true"
+    :router="true"
+  >
+    <menu-item
+      v-for="menu in menus"
+      :key="menu.path"
+      :item="menu"
+    />
+  </el-menu>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { usePermissionStore } from '@/stores/permission'
+import MenuItem from './MenuItem.vue'
+
+const route = useRoute()
+const permissionStore = usePermissionStore()
+
+const menus = computed(() => permissionStore.menus)
+const activeMenu = computed(() => route.path)
+const isCollapse = defineProps<{ collapse: boolean }>().collapse
+</script>
+\`\`\`
+
+### 3.2 菜单项组件
+
+\`\`\`vue
+<!-- components/Menu/MenuItem.vue -->
+<template>
+  <template v-if="!item.hidden">
+    <el-sub-menu
+      v-if="item.children && item.children.length > 0"
+      :index="item.path"
+    >
+      <template #title>
+        <el-icon v-if="item.meta?.icon">
+          <component :is="item.meta.icon" />
+        </el-icon>
+        <span>{{ item.meta?.title }}</span>
+      </template>
+      <menu-item
+        v-for="child in item.children"
+        :key="child.path"
+        :item="child"
+      />
+    </el-sub-menu>
+    
+    <el-menu-item
+      v-else
+      :index="item.path"
+    >
+      <el-icon v-if="item.meta?.icon">
+        <component :is="item.meta.icon" />
+      </el-icon>
+      <template #title>{{ item.meta?.title }}</template>
+    </el-menu-item>
+  </template>
+</template>
+
+<script setup lang="ts">
+import type { PropType } from 'vue'
+import type { MenuItem } from '@/types'
+
+defineProps({
+  item: {
+    type: Object as PropType<MenuItem>,
+    required: true
+  }
+})
+</script>
+\`\`\`
+
+## 4. 权限指令实现
+
+### 4.1 权限指令
+
+\`\`\`typescript
+// directives/permission.ts
+import type { DirectiveBinding } from 'vue'
+import { usePermissionStore } from '@/stores/permission'
+
+function checkPermission(el: HTMLElement, binding: DirectiveBinding) {
+  const { value } = binding
+  const permissionStore = usePermissionStore()
+  
+  if (value && value instanceof Array) {
+    const hasPermission = value.some(permission => 
+      permissionStore.hasPermission(permission)
+    )
+    
+    if (!hasPermission) {
+      el.parentNode?.removeChild(el)
+    }
+  } else {
+    throw new Error('need permissions! Like v-permission="[\'admin\',\'editor\']"')
+  }
+}
+
+export default {
+  mounted(el: HTMLElement, binding: DirectiveBinding) {
+    checkPermission(el, binding)
+  },
+  
+  updated(el: HTMLElement, binding: DirectiveBinding) {
+    checkPermission(el, binding)
+  }
+}
+\`\`\`
+
+### 4.2 使用权限指令
+
+\`\`\`vue
+<!-- views/system/user/index.vue -->
+<template>
+  <div class="user-management">
+    <div class="operation-bar">
+      <el-button
+        v-permission="['system:user:add']"
+        type="primary"
+        @click="handleAdd"
+      >
+        添加用户
+      </el-button>
+      
+      <el-button
+        v-permission="['system:user:delete']"
+        type="danger"
+        @click="handleBatchDelete"
+      >
+        批量删除
+      </el-button>
+    </div>
+    
+    <!-- 用户列表 -->
+    <el-table :data="userList">
+      <!-- 表格列 -->
+      <el-table-column label="操作">
+        <template #default="{ row }">
+          <el-button
+            v-permission="['system:user:edit']"
+            type="primary"
+            link
+            @click="handleEdit(row)"
+          >
+            编辑
+          </el-button>
+          
+          <el-button
+            v-permission="['system:user:delete']"
+            type="danger"
+            link
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { usePermissionStore } from '@/stores/permission'
+
+const permissionStore = usePermissionStore()
+const userList = ref([])
+
+// 处理添加用户
+const handleAdd = () => {
+  // 实现添加用户逻辑
+}
+
+// 处理编辑用户
+const handleEdit = (row: any) => {
+  // 实现编辑用户逻辑
+}
+
+// 处理删除用户
+const handleDelete = (row: any) => {
+  // 实现删除用户逻辑
+}
+
+// 处理批量删除
+const handleBatchDelete = () => {
+  // 实现批量删除逻辑
+}
+</script>
+\`\`\`
+
+## 5. API 接口封装
+
+### 5.1 权限相关接口
+
+\`\`\`typescript
+// api/user.ts
+import request from '@/utils/request'
+import type { UserPermissions } from '@/types'
+
+export function fetchUserPermissions(): Promise<UserPermissions> {
+  return request({
+    url: '/api/user/permissions',
+    method: 'get'
+  })
+}
+
+export function fetchMenuList() {
+  return request({
+    url: '/api/menus',
+    method: 'get'
+  })
+}
+\`\`\`
+
+### 5.2 请求拦截器
+
+\`\`\`typescript
+// utils/request.ts
+import axios from 'axios'
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
+
+const service: AxiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  timeout: 5000
+})
+
+// 请求拦截器
+service.interceptors.request.use(
+  (config: AxiosRequestConfig) => {
+    const userStore = useUserStore()
+    if (userStore.token) {
+      config.headers = {
+        ...config.headers,
+        Authorization: 'Bearer ' + userStore.token
+      }
+    }
+    return config
+  },
+  error => {
+    console.error('Request error:', error)
+    return Promise.reject(error)
+  }
+)
+
+// 响应拦截器
+service.interceptors.response.use(
+  (response: AxiosResponse) => {
+    const { code, message, data } = response.data
+    
+    if (code === 200) {
+      return data
+    } else {
+      ElMessage.error(message || 'Error')
+      return Promise.reject(new Error(message || 'Error'))
+    }
+  },
+  error => {
+    console.error('Response error:', error)
+    const message = error.response?.data?.message || error.message
+    ElMessage.error(message)
+    return Promise.reject(error)
+  }
+)
+
+export default service
+\`\`\`
+
+## 6. 最佳实践
+
+### 6.1 路由配置最佳实践
+
+1. **路由元信息设计**
+\`\`\`typescript
+interface RouteMeta {
+  title: string
+  icon?: string
+  roles?: string[]
+  permissions?: string[]
+  breadcrumb?: boolean
+  activeMenu?: string
+  hidden?: boolean
+}
+
+// 示例路由配置
+const routes: RouteRecordRaw[] = [
+  {
+    path: '/system',
+    component: Layout,
+    meta: {
+      title: '系统管理',
+      icon: 'system',
+      roles: ['admin']
+    },
+    children: [
+      {
+        path: 'user',
+        component: () => import('@/views/system/user/index.vue'),
+        meta: {
+          title: '用户管理',
+          permissions: ['system:user:list']
+        }
+      }
+    ]
+  }
+]
+\`\`\`
+
+2. **路由懒加载优化**
+\`\`\`typescript
+// 使用 vite 的动态导入
+const modules = import.meta.glob('../views/**/**.vue')
+
+function loadView(view: string) {
+  return modules['../views/' + view + '.vue']
+}
+
+const routes = [
+  {
+    path: '/example',
+    component: loadView('example/index')
+  }
+]
+\`\`\`
+
+### 6.2 权限控制最佳实践
+
+1. **组件级权限控制**
+\`\`\`vue
+<template>
+  <div class="page">
+    <PermissionWrapper :permissions="['system:user:add']">
+      <el-button type="primary">添加用户</el-button>
+    </PermissionWrapper>
+  </div>
+</template>
+
+<script setup lang="ts">
+import PermissionWrapper from '@/components/PermissionWrapper.vue'
+</script>
+\`\`\`
+
+2. **函数级权限控制**
+\`\`\`typescript
+import { usePermissionStore } from '@/stores/permission'
+
+function checkPermission(permissions: string[]): boolean {
+  const permissionStore = usePermissionStore()
+  return permissions.some(permission => 
+    permissionStore.hasPermission(permission)
+  )
+}
+
+// 使用示例
+function handleOperation() {
+  if (!checkPermission(['system:user:edit'])) {
+    ElMessage.error('没有操作权限')
+    return
+  }
+  // 执行操作
+}
+\`\`\`
+
+## 7. 性能优化
+
+### 7.1 路由性能优化
+
+\`\`\`typescript
+// router/index.ts
+const router = createRouter({
+  history: createWebHistory(),
+  routes: constantRoutes,
+  scrollBehavior: () => ({ top: 0 }),
+  // 路由切换时保持滚动位置
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
+    }
+  }
+})
+
+// 路由懒加载
+const asyncComponent = (component: string) => {
+  const modules = import.meta.glob('../views/**/**.vue')
+  return modules['../views/' + component + '.vue']
+}
+\`\`\`
+
+### 7.2 菜单性能优化
+
+\`\`\`typescript
+// 缓存计算结果
+import { computed } from 'vue'
+
+const filteredMenus = computed(() => {
+  // 使用 Map 缓存菜单项的权限检查结果
+  const permissionCache = new Map<string, boolean>()
+  
+  return menus.value.filter(menu => {
+    const key = menu.permissions?.join(',') || ''
+    
+    if (!key) return true
+    
+    if (permissionCache.has(key)) {
+      return permissionCache.get(key)
+    }
+    
+    const hasPermission = checkPermissions(menu.permissions)
+    permissionCache.set(key, hasPermission)
+    
+    return hasPermission
+  })
+})
+\`\`\`
+
+## 8. 总结
+
+实现动态菜单和权限控制系统时需要注意以下几点：
+
+1. **系统设计**
+   - 清晰的权限模型
+   - 灵活的路由配置
+   - 统一的状态管理
+
+2. **性能优化**
+   - 路由懒加载
+   - 组件按需加载
+   - 合理的缓存策略
+
+3. **安全性**
+   - 前后端权限统一
+   - 完整的权限校验
+   - 安全的 Token 管理
+
+4. **用户体验**
+   - 平滑的路由过渡
+   - 清晰的错误提示
+   - 友好的加载状态
+
+## 参考资料
+
+1. Vue Router 官方文档
+2. Pinia 官方文档
+3. Vue 3 最佳实践指南
+4. 企业级前端权限管理方案`,
+    readingTime: 25,
+    slug: 'vue3-dynamic-menu-permission'
+  }
+];
+
+export default posts;
