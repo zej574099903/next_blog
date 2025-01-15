@@ -1,6 +1,5 @@
 import { posts } from '@/data/posts'
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { marked } from 'marked'
 import { ShareButton } from '@/app/components/ShareButton'
@@ -27,18 +26,6 @@ export default function PostPage({ params }: { params: { slug: string } }) {
       <article className="max-w-4xl mx-auto px-4 py-12 animate-fadeIn">
         {/* 文章头部 */}
         <header className="mb-12">
-          {post.coverImage && (
-            <div className="relative w-full h-[400px] mb-8 rounded-2xl overflow-hidden">
-              <Image
-                src={post.coverImage}
-                alt={post.title}
-                fill
-                className="object-cover"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-            </div>
-          )}
           <h1 className="text-4xl sm:text-5xl font-bold mb-6 heading-gradient">
             {post.title}
           </h1>
