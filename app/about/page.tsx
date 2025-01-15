@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Avatar from '../components/Avatar';
 import Link from 'next/link';
 

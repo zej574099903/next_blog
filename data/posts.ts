@@ -42,7 +42,7 @@ export const tags: Tag[] = [
   { id: 'testing', name: '自动化测试', slug: 'testing' }
 ];
 
-export const posts: Post[] = [
+export const posts: Post[]  = [
   {
     id: 'js-call-bind-apply',
     title: '深入理解 JavaScript 中的 call、bind、apply',

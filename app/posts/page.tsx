@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { categories, posts } from '@/data/posts';
-import PostFilter from '../components/PostFilter';
+// import PostFilter from '../components/PostFilter';
 
 export default function Posts() {
-  const [filteredPosts, setFilteredPosts] = useState(posts);
+  const [filteredPosts] = useState(posts);
 
   return (
     <main className="min-h-screen py-20 bg-gray-50 dark:bg-gray-900">
@@ -21,9 +21,9 @@ export default function Posts() {
       </div>
 
       {/* Filter Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-        <PostFilter posts={posts} onFilterChange={setFilteredPosts} />
-      </div>
+      {/* <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <PostFilter posts={posts} onFilterChange={()=>setFilteredPosts} />
+      </div> */}
 
       {/* Posts List */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

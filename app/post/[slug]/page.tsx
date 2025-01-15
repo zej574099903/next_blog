@@ -10,8 +10,8 @@ export async function generateStaticParams() {
     slug: post.slug,
   }))
 }
-
-export default function PostPage({ params }: { params: { slug: string } }) {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export default function PostPage({ params }:any) {
   const post = posts.find((post) => post.slug === params.slug)
 
   if (!post) {

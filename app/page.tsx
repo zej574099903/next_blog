@@ -58,7 +58,7 @@ export default function Home() {
               >
                 <div className="relative h-48 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
                   <Image
-                    src={category.coverImage}
+                    src={category.coverImage || ''}
                     alt={category.name}
                     fill
                     className="object-contain p-8 group-hover:scale-110 transition-transform duration-300"

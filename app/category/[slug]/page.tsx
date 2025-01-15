@@ -7,8 +7,8 @@ export async function generateStaticParams() {
     slug: category.slug,
   }))
 }
-
-export default function CategoryPage({ params }: { params: { slug: string } }) {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export default function CategoryPage({ params }:any) {
   const category = categories.find((category) => category.slug === params.slug)
   const categoryPosts = posts.filter((post) => post.category === category?.id)
 
